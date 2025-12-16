@@ -6,11 +6,11 @@ import { Milky } from "./Milky";
 export function Experience() {
   return (
     <>
-      <Environment preset="sunset" />
+      <Environment preset="city" />
       <Milky />
       <directionalLight 
-        position={[0, 2, 2]} 
-        intensity={1} 
+        position={[2, 2, 2]} 
+        intensity={3} 
         castShadow 
       />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>

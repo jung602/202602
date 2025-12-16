@@ -36,7 +36,46 @@ export function Milky({ ...props }: MilkyProps) {
   useEffect(() => {
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
-        node.castShadow = true;
+        const mesh = node as THREE.Mesh;
+        mesh.castShadow = true;
+
+        // 기존 material을 MeshToonMaterial로 교체
+        if (mesh.material) {
+          const oldMaterial = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+
+          const newMaterials = oldMaterial.map((mat) => {
+            const toonMaterial = new THREE.MeshToonMaterial();
+
+            // 기존 material의 속성들을 새 material에 복사
+            if ('color' in mat) toonMaterial.color.copy(mat.color as THREE.Color);
+            if ('map' in mat) toonMaterial.map = mat.map as THREE.Texture | null;
+            if ('normalMap' in mat) toonMaterial.normalMap = mat.normalMap as THREE.Texture | null;
+            if ('normalScale' in mat && mat.normalScale) {
+              toonMaterial.normalScale.copy(mat.normalScale as THREE.Vector2);
+            }
+            if ('opacity' in mat) toonMaterial.opacity = mat.opacity as number;
+            if ('transparent' in mat) toonMaterial.transparent = mat.transparent as boolean;
+            if ('alphaMap' in mat) toonMaterial.alphaMap = mat.alphaMap as THREE.Texture | null;
+            if ('aoMap' in mat) toonMaterial.aoMap = mat.aoMap as THREE.Texture | null;
+            if ('aoMapIntensity' in mat) toonMaterial.aoMapIntensity = mat.aoMapIntensity as number;
+            if ('emissive' in mat && mat.emissive) {
+              toonMaterial.emissive.copy(mat.emissive as THREE.Color);
+            }
+            if ('emissiveMap' in mat) toonMaterial.emissiveMap = mat.emissiveMap as THREE.Texture | null;
+            if ('emissiveIntensity' in mat) toonMaterial.emissiveIntensity = mat.emissiveIntensity as number;
+
+            // 기존 material 폐기
+            mat.dispose();
+
+            return toonMaterial;
+          });
+
+          mesh.material = Array.isArray(mesh.material)
+            ? newMaterials
+            : newMaterials[0];
+        }
       }
     });
     neckBone.current = findBoneByName(scene, "neck");

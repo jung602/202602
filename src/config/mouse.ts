@@ -98,3 +98,4 @@ export function smoothRotation(
   currentRotation.y = THREE.MathUtils.lerp(currentRotation.y, targetY, lerpFactor);
 }
 
+
