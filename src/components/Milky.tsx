@@ -30,14 +30,22 @@ export function Milky({ ...props }: MilkyProps) {
   const collisionMeshes = useRef<THREE.Mesh[]>([]);
   const raycaster = useRef(new THREE.Raycaster());
   const neckBone = useRef<THREE.Bone | null>(null);
+  const eyeMeshes = useRef<THREE.Mesh[]>([]);
   const { pointer } = useThree();
 
   // scene 초기화 및 Neck 본 찾기
   useEffect(() => {
+    eyeMeshes.current = [];
+    
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
         mesh.castShadow = true;
+
+        // eye 메시 찾기
+        if (mesh.name === 'eye' || mesh.name === 'eye2') {
+          eyeMeshes.current.push(mesh);
+        }
 
         // 기존 material을 MeshToonMaterial로 교체
         if (mesh.material) {
@@ -109,8 +117,8 @@ export function Milky({ ...props }: MilkyProps) {
     };
   }, [scene]);
 
-  // 충돌 감지 및 처리 + 목 회전
-  useFrame(() => {
+  // 충돌 감지 및 처리 + 목 회전 + 눈 깜빡임
+  useFrame((state) => {
     // Wiggle 업데이트
     wiggleBones.current.forEach((wiggleBone) => {
       wiggleBone.update();
@@ -120,6 +128,26 @@ export function Milky({ ...props }: MilkyProps) {
     if (neckBone.current) {
       updateNeckRotation(neckBone.current, pointer.x, pointer.y);
     }
+
+    // 눈 깜빡임 애니메이션
+    const elapsed = state.clock.getElapsedTime();
+    const cycleTime = elapsed % 1; // 1초 주기
+
+    let blinkValue = 0;
+    if (cycleTime < 0.167) {
+      // 0-10프레임: 0 → 1 (눈 감기)
+      blinkValue = cycleTime / 0.167;
+    } else if (cycleTime < 0.25) {
+      // 10-15프레임: 1 → 0 (눈 뜨기)
+      blinkValue = 1 - (cycleTime - 0.167) / 0.083;
+    }
+    // 15-60프레임: 0 유지 (기본값)
+
+    eyeMeshes.current.forEach((mesh) => {
+      if (mesh.morphTargetInfluences) {
+        mesh.morphTargetInfluences[0] = blinkValue;
+      }
+    });
 
     // 충돌 감지
     if (collisionMeshes.current.length === 0) return;
