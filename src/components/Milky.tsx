@@ -42,8 +42,8 @@ export function Milky({ ...props }: MilkyProps) {
         const mesh = node as THREE.Mesh;
         mesh.castShadow = true;
 
-        // eye 메시 찾기
-        if (mesh.name === 'eye' || mesh.name === 'eye2') {
+        // eye 메시 찾기 (morph target이 있는 eye 메시)
+        if (mesh.morphTargetInfluences && mesh.morphTargetInfluences.length > 0 && mesh.name.includes('eye')) {
           eyeMeshes.current.push(mesh);
         }
 
