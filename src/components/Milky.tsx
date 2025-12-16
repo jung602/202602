@@ -47,8 +47,16 @@ export function Milky({ ...props }: MilkyProps) {
           eyeMeshes.current.push(mesh);
         }
 
-        // 기존 material을 MeshToonMaterial로 교체
+        // 기존 material을 MeshToonMaterial로 교체 (눈 제외)
         if (mesh.material) {
+          // 눈 메시는 툰 쉐이더 적용 제외
+          const isEye = mesh.name.toLowerCase().includes('eye') || 
+                        (Array.isArray(mesh.material) 
+                          ? mesh.material.some(mat => mat.name.toLowerCase().includes('eye'))
+                          : mesh.material.name.toLowerCase().includes('eye'));
+          
+          if (isEye) return;
+
           const oldMaterial = Array.isArray(mesh.material)
             ? mesh.material
             : [mesh.material];
