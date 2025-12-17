@@ -6,10 +6,9 @@ import { Milky } from "./Milky";
 export function Experience() {
   return (
     <>
-      <Environment preset="city" />
       <Milky />
       <directionalLight 
-        position={[2, 2, 2]} 
+        position={[0.5, 1, 1]} // 블렌더 Sun 회전 X:30°, Y:20°, Z:0° 에 해당
         intensity={3} 
         castShadow 
       />

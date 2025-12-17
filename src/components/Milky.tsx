@@ -11,7 +11,6 @@ import {
   findHairRootBones,
   findCollisionMeshes,
   createHairWiggleBones,
-  createHardcodedWiggleBones,
   disposeWiggleBones,
   handleCollision,
 } from "@/config/wiggle";
@@ -31,6 +30,8 @@ export function Milky({ ...props }: MilkyProps) {
   const raycaster = useRef(new THREE.Raycaster());
   const neckBone = useRef<THREE.Bone | null>(null);
   const eyeMeshes = useRef<THREE.Mesh[]>([]);
+  const rightFootBone = useRef<THREE.Bone | null>(null);
+  const leftFootBone = useRef<THREE.Bone | null>(null);
   const { pointer } = useThree();
 
   // scene 초기화 및 Neck 본 찾기
@@ -62,7 +63,9 @@ export function Milky({ ...props }: MilkyProps) {
             : [mesh.material];
 
           const newMaterials = oldMaterial.map((mat) => {
-            const toonMaterial = new THREE.MeshToonMaterial();
+            const toonMaterial = new THREE.MeshToonMaterial({
+              side: THREE.DoubleSide,
+            });
 
             // 기존 material의 속성들을 새 material에 복사
             if ('color' in mat) toonMaterial.color.copy(mat.color as THREE.Color);
@@ -95,6 +98,10 @@ export function Milky({ ...props }: MilkyProps) {
       }
     });
     neckBone.current = findBoneByName(scene, "neck");
+    
+    // 발 본 찾기
+    rightFootBone.current = findBoneByName(scene, "RightFoot");
+    leftFootBone.current = findBoneByName(scene, "LeftFoot");
   }, [scene]);
 
   // 충돌 메시 찾기
@@ -115,9 +122,6 @@ export function Milky({ ...props }: MilkyProps) {
       const hairWiggleBones = createHairWiggleBones(rootBones, hairBones.current);
       wiggleBones.current.push(...hairWiggleBones);
     }
-
-    const hardcodedWiggleBones = createHardcodedWiggleBones(allBones, hairBones.current);
-    wiggleBones.current.push(...hardcodedWiggleBones);
 
     return () => {
       disposeWiggleBones(wiggleBones.current);
@@ -156,6 +160,19 @@ export function Milky({ ...props }: MilkyProps) {
         mesh.morphTargetInfluences[0] = blinkValue;
       }
     });
+
+    // 발 살랑살랑 애니메이션 (좌우로 흔들기)
+    const footSwingSpeed = 3; // 흔드는 속도
+    const footSwingAmount = 0.05; // 흔드는 정도 (라디안)
+    const footSwing = Math.sin(elapsed * footSwingSpeed) * footSwingAmount;
+    
+    if (rightFootBone.current) {
+      rightFootBone.current.rotation.z = footSwing;
+    }
+    
+    if (leftFootBone.current) {
+      leftFootBone.current.rotation.z = -footSwing; // 반대 방향
+    }
 
     // 충돌 감지
     if (collisionMeshes.current.length === 0) return;

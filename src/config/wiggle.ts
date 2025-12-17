@@ -20,9 +20,6 @@ export const WIGGLE_CONFIG = {
   },
 };
 
-// 하드코딩된 본 이름들
-export const HARDCODED_BONE_NAMES = ["bake1", "bake4", "bake5"];
-
 // 충돌 메시 이름들
 export const COLLISION_MESH_NAMES = [
   "shoes_mesh_shape_mesh015",
@@ -136,26 +133,6 @@ export function createHairWiggleBones(
   return wiggleBones;
 }
 
-/**
- * 하드코딩된 본들에 WiggleBone 생성
- */
-export function createHardcodedWiggleBones(
-  allBones: THREE.Bone[],
-  hairBones: THREE.Bone[]
-): WiggleBone[] {
-  const wiggleBones: WiggleBone[] = [];
-
-  HARDCODED_BONE_NAMES.forEach((boneName) => {
-    const bone = allBones.find((b) => b.name === boneName);
-    if (bone && !hairBones.includes(bone)) {
-      hairBones.push(bone);
-      const wiggleBone = new WiggleBone(bone, WIGGLE_CONFIG.hardcoded);
-      wiggleBones.push(wiggleBone);
-    }
-  });
-
-  return wiggleBones;
-}
 
 /**
  * WiggleBone 정리
