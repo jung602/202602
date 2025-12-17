@@ -5,13 +5,8 @@ import { WiggleBone } from "wiggle/spring";
 export const WIGGLE_CONFIG = {
   // 머리카락 기본 설정
   hair: {
-    damping: 200,
-    stiffness: 2000,
-  },
-  // 하드코딩된 본들 설정 (bake1, bake4, bake5)
-  hardcoded: {
-    damping: 80,
-    stiffness: 1200,
+    damping: 100,
+    stiffness: 1500,
   },
   // baketail 본들은 2부터, 나머지는 5부터 적용
   minBoneNum: {
