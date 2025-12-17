@@ -4,6 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { WiggleBone } from "wiggle/spring";
+import { BASE_PATH } from "@/config/basePath";
 import * as THREE from "three";
 import {
   findBoneByName,
@@ -22,7 +23,7 @@ interface MilkyProps {
 
 export function Milky({ ...props }: MilkyProps) {
   const group = useRef<THREE.Group>(null);
-  const { nodes, scene } = useGLTF(`/models/MILKY.glb`);
+  const { nodes, scene } = useGLTF(`${BASE_PATH}/models/MILKY.glb`);
 
   const wiggleBones = useRef<WiggleBone[]>([]);
   const hairBones = useRef<THREE.Bone[]>([]);
@@ -37,6 +38,21 @@ export function Milky({ ...props }: MilkyProps) {
   // scene 초기화 및 Neck 본 찾기
   useEffect(() => {
     eyeMeshes.current = [];
+    
+    // 툰 쉐이더 명암 단계 설정
+    // minBrightness: 가장 어두운 부분의 밝기 (0~255, 높을수록 밝음)
+    // gradientSteps: 명암 단계 수
+    const gradientSteps = 4;
+    const minBrightness = 100; // 가장 어두운 부분도 약간 밝게
+    const colors = new Uint8Array(gradientSteps);
+    for (let i = 0; i < gradientSteps; i++) {
+      // minBrightness ~ 255 사이로 분배
+      colors[i] = Math.round(minBrightness + (i / (gradientSteps - 1)) * (255 - minBrightness));
+    }
+    const gradientMap = new THREE.DataTexture(colors, gradientSteps, 1, THREE.RedFormat);
+    gradientMap.minFilter = THREE.NearestFilter;
+    gradientMap.magFilter = THREE.NearestFilter;
+    gradientMap.needsUpdate = true;
     
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
@@ -65,6 +81,7 @@ export function Milky({ ...props }: MilkyProps) {
           const newMaterials = oldMaterial.map((mat) => {
             const toonMaterial = new THREE.MeshToonMaterial({
               side: THREE.DoubleSide,
+              gradientMap: gradientMap,
             });
 
             // 기존 material의 속성들을 새 material에 복사
