@@ -1,5 +1,30 @@
 import * as THREE from "three";
 
+// ========== 3단계 그라데이션 맵 (Toon Shading) ==========
+function createThreeToneGradientMap(): THREE.DataTexture {
+  const colors = new Uint8Array([
+    120,   // 어두운 영역 (중간보다 조금 더 어둡게)
+    160,  // 중간 영역  
+    255,  // 밝은 영역
+  ]);
+  
+  const gradientMap = new THREE.DataTexture(colors, 3, 1, THREE.RedFormat);
+  gradientMap.minFilter = THREE.NearestFilter;
+  gradientMap.magFilter = THREE.NearestFilter;
+  gradientMap.needsUpdate = true;
+  
+  return gradientMap;
+}
+
+// 싱글톤으로 그라데이션 맵 생성 (재사용)
+let cachedGradientMap: THREE.DataTexture | null = null;
+function getThreeToneGradientMap(): THREE.DataTexture {
+  if (!cachedGradientMap) {
+    cachedGradientMap = createThreeToneGradientMap();
+  }
+  return cachedGradientMap;
+}
+
 // ========== 기본값은 여기서만 정의 ==========
 const DEFAULT_GLOSSINESS = 10; // 스펙큘러1 날카로움 (0 = 넓게, 높을수록 날카롭게)
 const DEFAULT_SPECULAR_STRENGTH = 0.05; // 스펙큘러1 강도 (0 = 없음, 1 = 최대)
@@ -140,7 +165,7 @@ export function createEnhancedToonMaterial(
     map = null,
     normalMap = null,
     normalScale = new THREE.Vector2(1, 1),
-    gradientMap = null,
+    gradientMap,
     // 기본값 적용하지 않고 그대로 전달
     glossiness,
     specularStrength,
@@ -151,12 +176,15 @@ export function createEnhancedToonMaterial(
     rimSharpness,
   } = options;
 
+  // gradientMap이 명시적으로 null이면 null 사용, undefined면 3단계 기본값 사용
+  const finalGradientMap = gradientMap === null ? null : (gradientMap ?? getThreeToneGradientMap());
+
   const material = new THREE.MeshToonMaterial({
     color: color instanceof THREE.Color ? color : new THREE.Color(color),
     map: map,
     normalMap: normalMap,
     normalScale: normalScale,
-    gradientMap: gradientMap,
+    gradientMap: finalGradientMap,
     side: THREE.DoubleSide,
   });
 
