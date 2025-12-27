@@ -16,6 +16,7 @@ import {
   handleCollision,
 } from "@/config/wiggle";
 import { updateNeckRotation } from "@/config/mouse";
+import { createToonMaterialFromExisting } from "@/utils/toonMaterial";
 
 interface MilkyProps {
   [key: string]: unknown;
@@ -39,21 +40,6 @@ export function Milky({ ...props }: MilkyProps) {
   useEffect(() => {
     eyeMeshes.current = [];
     
-    // 툰 쉐이더 명암 단계 설정
-    // minBrightness: 가장 어두운 부분의 밝기 (0~255, 높을수록 밝음)
-    // gradientSteps: 명암 단계 수
-    const gradientSteps = 4;
-    const minBrightness = 100; // 가장 어두운 부분도 약간 밝게
-    const colors = new Uint8Array(gradientSteps);
-    for (let i = 0; i < gradientSteps; i++) {
-      // minBrightness ~ 255 사이로 분배
-      colors[i] = Math.round(minBrightness + (i / (gradientSteps - 1)) * (255 - minBrightness));
-    }
-    const gradientMap = new THREE.DataTexture(colors, gradientSteps, 1, THREE.RedFormat);
-    gradientMap.minFilter = THREE.NearestFilter;
-    gradientMap.magFilter = THREE.NearestFilter;
-    gradientMap.needsUpdate = true;
-    
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
@@ -64,7 +50,7 @@ export function Milky({ ...props }: MilkyProps) {
           eyeMeshes.current.push(mesh);
         }
 
-        // 기존 material을 MeshToonMaterial로 교체 (눈 제외)
+        // 기존 material을 ToonShaderMaterial로 교체 (눈 제외)
         if (mesh.material) {
           // 눈 메시는 툰 쉐이더 적용 제외
           const isEye = mesh.name.toLowerCase().includes('eye') || 
@@ -78,34 +64,9 @@ export function Milky({ ...props }: MilkyProps) {
             ? mesh.material
             : [mesh.material];
 
+          // ToonShaderMaterial 적용 (기존 머티리얼 색상 사용)
           const newMaterials = oldMaterial.map((mat) => {
-            const toonMaterial = new THREE.MeshToonMaterial({
-              side: THREE.DoubleSide,
-              gradientMap: gradientMap,
-            });
-
-            // 기존 material의 속성들을 새 material에 복사
-            if ('color' in mat) toonMaterial.color.copy(mat.color as THREE.Color);
-            if ('map' in mat) toonMaterial.map = mat.map as THREE.Texture | null;
-            if ('normalMap' in mat) toonMaterial.normalMap = mat.normalMap as THREE.Texture | null;
-            if ('normalScale' in mat && mat.normalScale) {
-              toonMaterial.normalScale.copy(mat.normalScale as THREE.Vector2);
-            }
-            if ('opacity' in mat) toonMaterial.opacity = mat.opacity as number;
-            if ('transparent' in mat) toonMaterial.transparent = mat.transparent as boolean;
-            if ('alphaMap' in mat) toonMaterial.alphaMap = mat.alphaMap as THREE.Texture | null;
-            if ('aoMap' in mat) toonMaterial.aoMap = mat.aoMap as THREE.Texture | null;
-            if ('aoMapIntensity' in mat) toonMaterial.aoMapIntensity = mat.aoMapIntensity as number;
-            if ('emissive' in mat && mat.emissive) {
-              toonMaterial.emissive.copy(mat.emissive as THREE.Color);
-            }
-            if ('emissiveMap' in mat) toonMaterial.emissiveMap = mat.emissiveMap as THREE.Texture | null;
-            if ('emissiveIntensity' in mat) toonMaterial.emissiveIntensity = mat.emissiveIntensity as number;
-
-            // 기존 material 폐기
-            mat.dispose();
-
-            return toonMaterial;
+            return createToonMaterialFromExisting(mat, { glossiness: 10 });
           });
 
           mesh.material = Array.isArray(mesh.material)
