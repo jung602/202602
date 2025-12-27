@@ -64,9 +64,9 @@ export function Milky({ ...props }: MilkyProps) {
             ? mesh.material
             : [mesh.material];
 
-          // ToonShaderMaterial 적용 (기존 머티리얼 색상 사용)
+          // ToonShaderMaterial 적용 (기본값 사용)
           const newMaterials = oldMaterial.map((mat) => {
-            return createToonMaterialFromExisting(mat, { glossiness: 10 });
+            return createToonMaterialFromExisting(mat);
           });
 
           mesh.material = Array.isArray(mesh.material)
