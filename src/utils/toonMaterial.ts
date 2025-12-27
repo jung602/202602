@@ -1,15 +1,19 @@
 import * as THREE from "three";
 
 // ========== 기본값은 여기서만 정의 ==========
-const DEFAULT_GLOSSINESS = 10; // 스펙큘러 날카로움 (0 = 넓게, 높을수록 날카롭게)
-const DEFAULT_SPECULAR_STRENGTH = 0.1; // 스펙큘러 강도 (0 = 없음, 1 = 최대)
+const DEFAULT_GLOSSINESS = 10; // 스펙큘러1 날카로움 (0 = 넓게, 높을수록 날카롭게)
+const DEFAULT_SPECULAR_STRENGTH = 0.05; // 스펙큘러1 강도 (0 = 없음, 1 = 최대)
+const DEFAULT_GLOSSINESS2 = 100000; // 스펙큘러2 날카로움 (더 날카롭게)
+const DEFAULT_SPECULAR_STRENGTH2 = 1; // 스펙큘러2 강도
 const DEFAULT_RIM_STRENGTH = 1; // 림 강도 (0 = 없음, 1 = 최대)
-const DEFAULT_RIM_WIDTH = 2.5// 림 위치 (0 = 넓게, 1 = 좁게)
-const DEFAULT_RIM_SHARPNESS = 0.5; // 림 날카로움 (0 = 부드럽게, 1 = 날카롭게)
+const DEFAULT_RIM_WIDTH = 2.5; // 림 위치 (0 = 넓게, 1 = 좁게)
+const DEFAULT_RIM_SHARPNESS = 1; // 림 날카로움 (0 = 부드럽게, 1 = 날카롭게)
 
 interface ToonEnhanceOptions {
   glossiness?: number;
   specularStrength?: number;
+  glossiness2?: number;
+  specularStrength2?: number;
   rimStrength?: number;
   rimWidth?: number;
   rimSharpness?: number;
@@ -26,6 +30,8 @@ export function enhanceToonMaterial(
   // 기본값은 여기서 적용
   const glossiness = options.glossiness ?? DEFAULT_GLOSSINESS;
   const specularStrength = options.specularStrength ?? DEFAULT_SPECULAR_STRENGTH;
+  const glossiness2 = options.glossiness2 ?? DEFAULT_GLOSSINESS2;
+  const specularStrength2 = options.specularStrength2 ?? DEFAULT_SPECULAR_STRENGTH2;
   const rimStrength = options.rimStrength ?? DEFAULT_RIM_STRENGTH;
   const rimWidth = options.rimWidth ?? DEFAULT_RIM_WIDTH;
   const rimSharpness = options.rimSharpness ?? DEFAULT_RIM_SHARPNESS;
@@ -34,6 +40,8 @@ export function enhanceToonMaterial(
     // uniform 추가
     shader.uniforms.uGlossiness = { value: glossiness };
     shader.uniforms.uSpecularStrength = { value: specularStrength };
+    shader.uniforms.uGlossiness2 = { value: glossiness2 };
+    shader.uniforms.uSpecularStrength2 = { value: specularStrength2 };
     shader.uniforms.uRimStrength = { value: rimStrength };
     shader.uniforms.uRimWidth = { value: rimWidth };
     shader.uniforms.uRimSharpness = { value: rimSharpness };
@@ -45,6 +53,8 @@ export function enhanceToonMaterial(
       #include <common>
       uniform float uGlossiness;
       uniform float uSpecularStrength;
+      uniform float uGlossiness2;
+      uniform float uSpecularStrength2;
       uniform float uRimStrength;
       uniform float uRimWidth;
       uniform float uRimSharpness;
@@ -55,7 +65,7 @@ export function enhanceToonMaterial(
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
       `
-      // === 스펙큘러 (빛 고정) + 림 (카메라 따라 움직임) ===
+      // === 스펙큘러1 + 스펙큘러2 (빛 고정) + 림 (카메라 따라 움직임) ===
       vec3 viewDir = normalize(vViewPosition);
       vec3 enhancedNormal = normalize(vNormal);
       
@@ -72,10 +82,15 @@ export function enhanceToonMaterial(
       float NdotL = dot(enhancedNormal, dirLightDir);
       float lightFacing = max(0.0, NdotL);  // 빛을 받는 정도 (0~1)
       
-      // Specular - 빛을 정면으로 받는 부분에만 하이라이트 (카메라 무관, 빛에 고정)
-      float specThreshold = 1.0 - (1.0 / (uGlossiness + 1.0));
-      float specularIntensity = smoothstep(specThreshold - 0.05, specThreshold + 0.05, lightFacing);
-      specularIntensity *= dirLightStrength;
+      // Specular 1 - 넓은 하이라이트 (카메라 무관, 빛에 고정)
+      float specThreshold1 = 1.0 - (1.0 / (uGlossiness + 1.0));
+      float specularIntensity1 = smoothstep(specThreshold1 - 0.05, specThreshold1 + 0.05, lightFacing);
+      specularIntensity1 *= dirLightStrength;
+      
+      // Specular 2 - 날카로운 하이라이트 (카메라 무관, 빛에 고정)
+      float specThreshold2 = 1.0 - (1.0 / (uGlossiness2 + 1.0));
+      float specularIntensity2 = smoothstep(specThreshold2 - 0.01, specThreshold2 + 0.01, lightFacing);
+      specularIntensity2 *= dirLightStrength;
       
       // Rim lighting - 카메라 기준 가장자리 + 빛 마스킹 (카메라 따라 움직임)
       float rimDot = 1.0 - dot(viewDir, enhancedNormal);  // 카메라 기준 가장자리
@@ -85,8 +100,9 @@ export function enhanceToonMaterial(
       float rimEdge = 0.01 + (1.0 - uRimSharpness) * 0.15;
       rimIntensity = smoothstep(uRimWidth - rimEdge, uRimWidth + rimEdge, rimIntensity);
       
-      // outgoingLight 기반 증폭
-      outgoingLight *= (1.0 + specularIntensity * uSpecularStrength);
+      // outgoingLight 기반 증폭 (두 스펙큘러 모두 적용)
+      outgoingLight *= (1.0 + specularIntensity1 * uSpecularStrength);
+      outgoingLight *= (1.0 + specularIntensity2 * uSpecularStrength2);
       outgoingLight *= (1.0 + rimIntensity * uRimStrength);
       
       #include <opaque_fragment>
@@ -106,6 +122,8 @@ interface EnhancedToonOptions {
   gradientMap?: THREE.Texture | null;
   glossiness?: number;
   specularStrength?: number;
+  glossiness2?: number;
+  specularStrength2?: number;
   rimStrength?: number;
   rimWidth?: number;
   rimSharpness?: number;
@@ -126,6 +144,8 @@ export function createEnhancedToonMaterial(
     // 기본값 적용하지 않고 그대로 전달
     glossiness,
     specularStrength,
+    glossiness2,
+    specularStrength2,
     rimStrength,
     rimWidth,
     rimSharpness,
@@ -141,7 +161,15 @@ export function createEnhancedToonMaterial(
   });
 
   // 전달받은 값 그대로 넘김 (undefined면 enhanceToonMaterial에서 기본값 적용)
-  enhanceToonMaterial(material, { glossiness, specularStrength, rimStrength, rimWidth, rimSharpness });
+  enhanceToonMaterial(material, {
+    glossiness,
+    specularStrength,
+    glossiness2,
+    specularStrength2,
+    rimStrength,
+    rimWidth,
+    rimSharpness,
+  });
 
   return material;
 }
@@ -154,7 +182,15 @@ export function createToonMaterialFromExisting(
   options: ToonEnhanceOptions = {}
 ): THREE.MeshToonMaterial {
   // 기본값 적용하지 않고 그대로 전달
-  const { glossiness, specularStrength, rimStrength, rimWidth, rimSharpness } = options;
+  const {
+    glossiness,
+    specularStrength,
+    glossiness2,
+    specularStrength2,
+    rimStrength,
+    rimWidth,
+    rimSharpness,
+  } = options;
 
   let color: THREE.Color = new THREE.Color("#ffffff");
   let map: THREE.Texture | null = null;
@@ -197,6 +233,8 @@ export function createToonMaterialFromExisting(
     normalScale,
     glossiness,
     specularStrength,
+    glossiness2,
+    specularStrength2,
     rimStrength,
     rimWidth,
     rimSharpness,

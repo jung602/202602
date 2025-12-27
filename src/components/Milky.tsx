@@ -64,9 +64,18 @@ export function Milky({ ...props }: MilkyProps) {
             ? mesh.material
             : [mesh.material];
 
-          // ToonShaderMaterial 적용 (기본값 사용)
+          // 이미 MeshToonMaterial로 변환된 경우 건너뛰기
+          if (oldMaterial.some(mat => mat.type === 'MeshToonMaterial')) return;
+
+          // ToonShaderMaterial 적용 (머티리얼 이름에 따라 옵션 다르게)
           const newMaterials = oldMaterial.map((mat) => {
-            return createToonMaterialFromExisting(mat);
+            const matName = mat.name.toLowerCase();
+            const isHairOrSkin = matName.includes('hair') || matName.includes('skin');
+            
+            // hair, skin 머티리얼에만 스펙큘러2 적용
+            return createToonMaterialFromExisting(mat, {
+              specularStrength2: isHairOrSkin ? undefined : 0, // undefined면 기본값 사용
+            });
           });
 
           mesh.material = Array.isArray(mesh.material)
