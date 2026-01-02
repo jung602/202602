@@ -30,9 +30,10 @@ const DEFAULT_GLOSSINESS = 10; // 스펙큘러1 날카로움 (0 = 넓게, 높을
 const DEFAULT_SPECULAR_STRENGTH = 0.05; // 스펙큘러1 강도 (0 = 없음, 1 = 최대)
 const DEFAULT_GLOSSINESS2 = 100000; // 스펙큘러2 날카로움 (더 날카롭게)
 const DEFAULT_SPECULAR_STRENGTH2 = 0.3; // 스펙큘러2 강도
-const DEFAULT_RIM_STRENGTH = 1; // 림 강도 (0 = 없음, 1 = 최대)
+const DEFAULT_RIM_STRENGTH = 0.5; // 림 강도 (0 = 없음, 1 = 최대)
 const DEFAULT_RIM_WIDTH = 2.5; // 림 위치 (0 = 넓게, 1 = 좁게)
-const DEFAULT_RIM_SHARPNESS = 1; // 림 날카로움 (0 = 부드럽게, 1 = 날카롭게)
+const DEFAULT_RIM_SHARPNESS = 0.5; // 림 날카로움 (0 = 부드럽게, 1 = 날카롭게)
+const DEFAULT_RIM_POWER = 1; // 림 파워 (낮을수록 정면에서도 보임, 0.3~1.0 권장)
 
 interface ToonEnhanceOptions {
   glossiness?: number;
@@ -42,6 +43,7 @@ interface ToonEnhanceOptions {
   rimStrength?: number;
   rimWidth?: number;
   rimSharpness?: number;
+  rimPower?: number;
 }
 
 /**
@@ -60,6 +62,7 @@ export function enhanceToonMaterial(
   const rimStrength = options.rimStrength ?? DEFAULT_RIM_STRENGTH;
   const rimWidth = options.rimWidth ?? DEFAULT_RIM_WIDTH;
   const rimSharpness = options.rimSharpness ?? DEFAULT_RIM_SHARPNESS;
+  const rimPower = options.rimPower ?? DEFAULT_RIM_POWER;
 
   material.onBeforeCompile = (shader) => {
     // uniform 추가
@@ -70,6 +73,7 @@ export function enhanceToonMaterial(
     shader.uniforms.uRimStrength = { value: rimStrength };
     shader.uniforms.uRimWidth = { value: rimWidth };
     shader.uniforms.uRimSharpness = { value: rimSharpness };
+    shader.uniforms.uRimPower = { value: rimPower };
 
     // ========== Fragment Shader 수정 ==========
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -83,6 +87,7 @@ export function enhanceToonMaterial(
       uniform float uRimStrength;
       uniform float uRimWidth;
       uniform float uRimSharpness;
+      uniform float uRimPower;
       `
     );
 
@@ -118,7 +123,10 @@ export function enhanceToonMaterial(
       specularIntensity2 *= dirLightStrength;
       
       // Rim lighting - 카메라 기준 가장자리 + 빛 마스킹 (카메라 따라 움직임)
-      float rimDot = 1.0 - dot(viewDir, enhancedNormal);  // 카메라 기준 가장자리
+      float baseRimDot = 1.0 - dot(viewDir, enhancedNormal);  // 0 (정면) ~ 1 (가장자리)
+      // 정면에서 0.5, 가장자리에서 1.0 으로 리맵 (정면에서도 림이 보임)
+      float rimDot = mix(0.45, 1.0, baseRimDot);
+      rimDot = pow(rimDot, uRimPower);
       float rimIntensity = rimDot * lightFacing * dirLightStrength;  // 빛 받는 면에서만
       
       // 림 날카로움 조절 (sharpness가 높을수록 edge가 좁아짐)
@@ -152,6 +160,7 @@ interface EnhancedToonOptions {
   rimStrength?: number;
   rimWidth?: number;
   rimSharpness?: number;
+  rimPower?: number;
 }
 
 /**
@@ -174,6 +183,7 @@ export function createEnhancedToonMaterial(
     rimStrength,
     rimWidth,
     rimSharpness,
+    rimPower,
   } = options;
 
   // gradientMap이 명시적으로 null이면 null 사용, undefined면 3단계 기본값 사용
@@ -197,6 +207,7 @@ export function createEnhancedToonMaterial(
     rimStrength,
     rimWidth,
     rimSharpness,
+    rimPower,
   });
 
   return material;
@@ -218,6 +229,7 @@ export function createToonMaterialFromExisting(
     rimStrength,
     rimWidth,
     rimSharpness,
+    rimPower,
   } = options;
 
   let color: THREE.Color = new THREE.Color("#ffffff");
@@ -266,5 +278,6 @@ export function createToonMaterialFromExisting(
     rimStrength,
     rimWidth,
     rimSharpness,
+    rimPower,
   });
 }
