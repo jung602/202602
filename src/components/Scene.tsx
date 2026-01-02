@@ -9,14 +9,16 @@ export function Scene() {
   return (
     <div className="w-full h-screen">
       <Loader />
-      <Canvas shadows="soft" orthographic camera={{ position: [10, 10, 10], zoom: 300 }}>
+      <Canvas shadows="soft" orthographic camera={{ position: [10, 7.5, 10], zoom: 300 }}>
         <OrbitControls 
         autoRotate={true}
-        autoRotateSpeed={0.5}
+        autoRotateSpeed={0.25}
+        minPolarAngle={0}
+        maxPolarAngle={Math.PI / 2.3}
         />
         <color attach="background" args={["#fff"]} />
         <fog attach="fog" args={["#fff", 1, 100]} />
-        <group position-y={-.15}>
+        <group position-y={-.3}>
           <Suspense fallback={null}>
             <Experience />
           </Suspense>

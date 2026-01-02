@@ -2,14 +2,19 @@
 
 import { Environment, Grid } from "@react-three/drei";
 import { Milky } from "./Milky";
+import { Ipod } from "./Ipod";
 
 export function Experience() {
   return (
     <>
       <Environment preset="city" />
-      <Milky />
+      <Milky 
+      rotation-y={-0.2}
+      position={[0, 0, -0.3]}
+      />
+      <Ipod />
       <directionalLight 
-        position={[1, 1.25, 1]}
+        position={[0.5, 1.25, 1]}
         intensity={3} 
         castShadow
         shadow-mapSize={[2048, 2048]}
