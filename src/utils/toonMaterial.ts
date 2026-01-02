@@ -29,7 +29,7 @@ function getThreeToneGradientMap(): THREE.DataTexture {
 const DEFAULT_GLOSSINESS = 10; // 스펙큘러1 날카로움 (0 = 넓게, 높을수록 날카롭게)
 const DEFAULT_SPECULAR_STRENGTH = 0.05; // 스펙큘러1 강도 (0 = 없음, 1 = 최대)
 const DEFAULT_GLOSSINESS2 = 100000; // 스펙큘러2 날카로움 (더 날카롭게)
-const DEFAULT_SPECULAR_STRENGTH2 = 0.5; // 스펙큘러2 강도
+const DEFAULT_SPECULAR_STRENGTH2 = 0.3; // 스펙큘러2 강도
 const DEFAULT_RIM_STRENGTH = 1; // 림 강도 (0 = 없음, 1 = 최대)
 const DEFAULT_RIM_WIDTH = 2.5; // 림 위치 (0 = 넓게, 1 = 좁게)
 const DEFAULT_RIM_SHARPNESS = 1; // 림 날카로움 (0 = 부드럽게, 1 = 날카롭게)

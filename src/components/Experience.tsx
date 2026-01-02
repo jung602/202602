@@ -9,7 +9,7 @@ export function Experience() {
       <Environment preset="city" />
       <Milky />
       <directionalLight 
-        position={[2, 2, 2]}
+        position={[0, 1, 2]}
         intensity={3} 
         castShadow
         shadow-mapSize={[2048, 2048]}
