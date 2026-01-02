@@ -9,7 +9,7 @@ export function Scene() {
   return (
     <div className="w-full h-screen">
       <Loader />
-      <Canvas shadows="soft" orthographic camera={{ position: [10, 7.5, 10], zoom: 300 }}>
+      <Canvas shadows="variance" orthographic camera={{ position: [10, 7.5, 10], zoom: 300 }}>
         <OrbitControls 
         autoRotate={true}
         autoRotateSpeed={0.25}
