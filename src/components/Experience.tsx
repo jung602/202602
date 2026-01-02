@@ -1,8 +1,9 @@
 "use client";
 
 import { Environment, Grid } from "@react-three/drei";
-import { Milky } from "./Milky";
-import { Ipod } from "./Ipod";
+import { Milky } from "./models/Milky";
+import { Ipod } from "./models/Ipod";
+import { Ball } from "./models/Ball";
 
 export function Experience() {
   return (
@@ -14,6 +15,10 @@ export function Experience() {
       <Ipod
       rotation-y={-0.5}
       position={[0, 0.001, -0.3]} />
+      <Ball
+      rotation-y={1}
+      scale={1.2}
+      position={[-0.1, 0, 0]} />
 
       <directionalLight 
         position={[0.5, 1.25, 1]}
